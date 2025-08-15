@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>三角関数クイズ</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f5f5f5;
+  }
+
+.container {
+background-color: white;
+padding: 30px;
+border-radius: 15px;
+box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+text-align: center;
+}
+
+h1 {
+color: #2c3e50;
+margin-bottom: 30px;
+font-size: 2.5em;
+}
+
+.score-display {
+font-size: 1.5em;
+margin-bottom: 30px;
+padding: 15px;
+background-color: #3498db;
+color: white;
+border-radius: 10px;
+font-weight: bold;
+}
+
+.question {
+font-size: 2em;
+margin-bottom: 30px;
+color: #2c3e50;
+font-weight: bold;
+}
+
+.choices {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 15px;
+margin-bottom: 30px;
+}
+
+.choice-btn {
+padding: 20px;
+font-size: 1.2em;
+border: none;
+border-radius: 10px;
+cursor: pointer;
+background-color: #ecf0f1;
+color: #2c3e50;
+transition: all 0.3s ease;
+font-weight: bold;
+}
+
+.choice-btn:hover {
+background-color: #bdc3c7;
+transform: translateY(-2px);
+}
+
+.choice-btn.correct {
+background-color: #2ecc71;
+color: white;
+}
+
+.choice-btn.incorrect {
+background-color: #e74c3c;
+color: white;
+}
+
+.result {
+font-size: 1.3em;
+margin-bottom: 20px;
+font-weight: bold;
+min-height: 30px;
+}
+
+.next-btn {
+padding: 15px 30px;
+font-size: 1.2em;
+background-color: #3498db;
+color: white;
+border: none;
+border-radius: 8px;
+cursor: pointer;
+transition: background-color 0.3s ease;
+}
+
+.next-btn:hover {
+background-color: #2980b9;
+}
+
+.next-btn:disabled {
+background-color: #bdc3c7;
+cursor: not-allowed;
+}
+
+.value-table {
+margin: 20px 0;
+font-size: 0.9em;
+background-color: #f8f9fa;
+padding: 15px;
+border-radius: 8px;
+}
+
+table {
+width: 100%;
+border-collapse: collapse;
+margin-top: 10px;
+}
+
+th, td {
+padding: 8px;
+text-align: center;
+border: 1px solid #ddd;
+}
+
+th {
+background-color: #34495e;
+color: white;
+}
+
+.fraction {
+display: inline-block;
+text-align: center;
+vertical-align: middle;
+font-size: 1em;
+}
+
+.fraction .numerator {
+display: block;
+border-bottom: 1px solid currentColor;
+padding-bottom: 2px;
+margin-bottom: 2px;
+line-height: 1;
+}
+
+.fraction .denominator {
+display: block;
+padding-top: 2px;
+line-height: 1;
+}
+
+.choice-btn .fraction {
+font-size: 0.9em;
+}
+</style>
+
+</head>
+<body>
+
+<div class="container">
+  <h1>📐 三角関数クイズ</h1>
+
+  <div class="score-display">
+    連続正解数: <span id="streak">0</span>問
+  </div>
+
+  <div class="question" id="question">
+    問題を読み込み中...
+  </div>
+
+  <div class="choices" id="choices">
+    <!-- 選択肢がここに表示される -->
+  </div>
+
+  <div class="result" id="result"></div>
+
+  <button class="next-btn" id="nextBtn" onclick="generateQuestion()" disabled>
+    次の問題
+  </button>
+
+</div>
+
+<script>
+// 三角関数の値のデータ
+const trigValues = {
+  0: { sin: '0', cos: '1', tan: '0' },
+  30: { sin: '<div class="fraction"><div class="numerator">1</div><div class="denominator">2</div></div>', cos: '<div class="fraction"><div class="numerator">√3</div><div class="denominator">2</div></div>', tan: '<div class="fraction"><div class="numerator">1</div><div class="denominator">√3</div></div>' },
+  45: { sin: '<div class="fraction"><div class="numerator">1</div><div class="denominator">√2</div></div>', cos: '<div class="fraction"><div class="numerator">1</div><div class="denominator">√2</div></div>', tan: '1' },
+  60: { sin: '<div class="fraction"><div class="numerator">√3</div><div class="denominator">2</div></div>', cos: '<div class="fraction"><div class="numerator">1</div><div class="denominator">2</div></div>', tan: '√3' },
+  90: { sin: '1', cos: '0', tan: '未定義' },
+  120: { sin: '<div class="fraction"><div class="numerator">√3</div><div class="denominator">2</div></div>', cos: '<div class="fraction"><div class="numerator">-1</div><div class="denominator">2</div></div>', tan: '-√3' },
+  135: { sin: '<div class="fraction"><div class="numerator">1</div><div class="denominator">√2</div></div>', cos: '<div class="fraction"><div class="numerator">-1</div><div class="denominator">√2</div></div>', tan: '-1' },
+  150: { sin: '<div class="fraction"><div class="numerator">1</div><div class="denominator">2</div></div>', cos: '<div class="fraction"><div class="numerator">-√3</div><div class="denominator">2</div></div>', tan: '<div class="fraction"><div class="numerator">-1</div><div class="denominator">√3</div></div>' },
+  180: { sin: '0', cos: '-1', tan: '0' }
+};
+
+const angles = [0, 30, 45, 60, 90, 120, 135, 150, 180];
+const functions = ['sin', 'cos', 'tan'];
+
+let streak = 0;
+let currentAnswer = '';
+let answered = false;
+
+// 不正解の選択肢を生成
+function generateWrongAnswers(correctAnswer, functionType) {
+  const wrongAnswers = [];
+  const allValues = [];
+  
+  // 全ての値を収集
+  for (let angle of angles) {
+    const value = trigValues[angle][functionType];
+    if (value !== correctAnswer && value !== '未定義') {
+      allValues.push(value);
+    }
+  }
+  
+  // 追加の間違い選択肢（分数形式）
+  const extraWrongAnswers = [
+    '<div class="fraction"><div class="numerator">1</div><div class="denominator">3</div></div>',
+    '<div class="fraction"><div class="numerator">2</div><div class="denominator">3</div></div>',
+    '<div class="fraction"><div class="numerator">√5</div><div class="denominator">2</div></div>',
+    '<div class="fraction"><div class="numerator">1</div><div class="denominator">√5</div></div>',
+    '2', '-2',
+    '<div class="fraction"><div class="numerator">1</div><div class="denominator">4</div></div>',
+    '<div class="fraction"><div class="numerator">3</div><div class="denominator">4</div></div>',
+    '<div class="fraction"><div class="numerator">-1</div><div class="denominator">3</div></div>',
+    '<div class="fraction"><div class="numerator">-2</div><div class="denominator">3</div></div>',
+    '<div class="fraction"><div class="numerator">2</div><div class="denominator">√3</div></div>',
+    '<div class="fraction"><div class="numerator">√3</div><div class="denominator">4</div></div>',
+    '<div class="fraction"><div class="numerator">-2</div><div class="denominator">√3</div></div>',
+    '<div class="fraction"><div class="numerator">-√3</div><div class="denominator">4</div></div>'
+  ];
+  
+  const combinedWrongAnswers = [...allValues, ...extraWrongAnswers];
+  
+  // 重複を避けて3つ選択
+  const usedAnswers = new Set([correctAnswer]);
+  while (wrongAnswers.length < 3 && combinedWrongAnswers.length > 0) {
+    const randomIndex = Math.floor(Math.random() * combinedWrongAnswers.length);
+    const answer = combinedWrongAnswers[randomIndex];
+    
+    if (!usedAnswers.has(answer)) {
+      wrongAnswers.push(answer);
+      usedAnswers.add(answer);
+    }
+    
+    combinedWrongAnswers.splice(randomIndex, 1);
+  }
+  
+  // 足りない場合は適当な値を追加
+  while (wrongAnswers.length < 3) {
+    wrongAnswers.push(`選択肢${wrongAnswers.length + 1}`);
+  }
+  
+  return wrongAnswers;
+}
+
+function generateQuestion() {
+  answered = false;
+  document.getElementById('nextBtn').disabled = true;
+  document.getElementById('result').textContent = '';
+  
+  // ランダムに角度と関数を選択
+  const randomAngle = angles[Math.floor(Math.random() * angles.length)];
+  const randomFunction = functions[Math.floor(Math.random() * functions.length)];
+  
+  currentAnswer = trigValues[randomAngle][randomFunction];
+  
+  // 問題文を表示
+  document.getElementById('question').textContent = `${randomFunction}${randomAngle}° の値は？`;
+  
+  // 選択肢を生成
+  const wrongAnswers = generateWrongAnswers(currentAnswer, randomFunction);
+  const allChoices = [currentAnswer, ...wrongAnswers];
+  
+  // シャッフル
+  for (let i = allChoices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [allChoices[i], allChoices[j]] = [allChoices[j], allChoices[i]];
+  }
+  
+  // 選択肢ボタンを作成
+  const choicesDiv = document.getElementById('choices');
+  choicesDiv.innerHTML = '';
+  
+  allChoices.forEach(choice => {
+    const button = document.createElement('button');
+    button.className = 'choice-btn';
+    button.innerHTML = choice; // innerHTMLに変更してHTMLタグを有効にする
+    button.onclick = () => selectAnswer(choice, button);
+    choicesDiv.appendChild(button);
+  });
+}
+
+function selectAnswer(selectedAnswer, buttonElement) {
+  if (answered) return;
+  
+  answered = true;
+  const buttons = document.querySelectorAll('.choice-btn');
+  
+  buttons.forEach(btn => {
+    btn.disabled = true;
+    if (btn.innerHTML === currentAnswer) { // innerHTMLに変更
+      btn.classList.add('correct');
+    } else if (btn === buttonElement && selectedAnswer !== currentAnswer) {
+      btn.classList.add('incorrect');
+    }
+  });
+  
+  const resultDiv = document.getElementById('result');
+  if (selectedAnswer === currentAnswer) {
+    streak++;
+    resultDiv.textContent = '🎉 正解！';
+    resultDiv.style.color = '#2ecc71';
+  } else {
+    streak = 0;
+    resultDiv.textContent = `❌ 不正解... 正答: ${currentAnswer}`;
+    resultDiv.style.color = '#e74c3c';
+  }
+  
+  document.getElementById('streak').textContent = streak;
+  document.getElementById('nextBtn').disabled = false;
+}
+
+// 最初の問題を生成
+generateQuestion();
+</script>
+
+</body>
+</html>
