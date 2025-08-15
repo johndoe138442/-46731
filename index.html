@@ -316,7 +316,7 @@ function selectAnswer(selectedAnswer, buttonElement) {
     resultDiv.style.color = '#2ecc71';
   } else {
     streak = 0;
-    resultDiv.textContent = `❌ 不正解... 正答: ${currentAnswer}`;
+    resultDiv.innerHTML = `❌ 不正解... 正答: ${currentAnswer}`; // innerHTMLに変更
     resultDiv.style.color = '#e74c3c';
   }
   
